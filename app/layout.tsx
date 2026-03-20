@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Chakra_Petch, Inter } from "next/font/google";
 import "./globals.css";
-import { AppProvider } from "@/context/AppContext";
+import { Providers } from "@/components/Providers";
 
 const chakraPetch = Chakra_Petch({
   variable: "--font-chakra-petch",
@@ -30,7 +30,7 @@ export default function RootLayout({
       className={`${chakraPetch.variable} ${inter.variable} h-full`}
     >
       <body className="min-h-full flex flex-col font-[family-name:var(--font-inter)]">
-        <AppProvider>{children}</AppProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

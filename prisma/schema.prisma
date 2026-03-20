@@ -1,0 +1,35 @@
+// ATENÇÃO: Este schema contém apenas os modelos usados pelo select-activity.
+// As migrations são gerenciadas exclusivamente pelo hub-efops.
+// Nunca rode "prisma db push" ou "prisma migrate" a partir deste app.
+// Use apenas: npx prisma generate
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  password  String?
+  image     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  appRoles  AppRole[]
+}
+
+model AppRole {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app       String
+  role      String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, app])
+}
