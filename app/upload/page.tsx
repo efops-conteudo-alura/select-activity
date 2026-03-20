@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { DropZone } from "@/components/DropZone";
 import { saveCourse } from "@/lib/storage";
@@ -39,6 +40,20 @@ export default function UploadPage() {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16 max-w-lg mx-auto w-full">
+      {personType === "coordinator" && (
+        <div className="w-full bg-alura-blue-dark border border-alura-blue-light/20 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
+          <p className="text-alura-blue-light/60 text-sm">
+            Precisa adicionar um instrutor?
+          </p>
+          <Link
+            href="/instrutores"
+            className="text-alura-cyan text-sm font-medium hover:underline shrink-0"
+          >
+            Gerenciar instrutores →
+          </Link>
+        </div>
+      )}
+
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="font-[family-name:var(--font-chakra-petch)] text-3xl font-bold text-alura-cyan">
           Upload do arquivo

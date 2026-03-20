@@ -3,6 +3,27 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+export async function GET() {
+  const session = await getServerSession(authOptions) as { user: { role: string } } | null;
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "COORDINATOR" && session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const appRoles = await prisma.appRole.findMany({
+    where: { app: "select-activity", role: "INSTRUCTOR" },
+    include: { user: { select: { id: true, name: true, email: true, createdAt: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(appRoles.map((r) => ({
+    id: r.user.id,
+    name: r.user.name,
+    email: r.user.email,
+    createdAt: r.user.createdAt,
+  })));
+}
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions) as { user: { id: string; email: string; role: string } } | null;
 

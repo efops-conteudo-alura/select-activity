@@ -67,14 +67,14 @@ export default function LoginPage() {
 
           <div className="flex flex-col gap-1">
             <label htmlFor="password" className="text-sm text-alura-blue-light/70">
-              Senha
+              Senha{" "}
+              <span className="text-alura-blue-light/40 font-normal">(instrutores: deixe em branco)</span>
             </label>
             <input
               id="password"
               name="password"
               type="password"
               placeholder="••••••••"
-              required
               className="rounded-lg bg-alura-blue-deep border border-alura-blue-light/20 px-3 py-2 text-sm text-alura-blue-light placeholder:text-alura-blue-light/30 focus:outline-none focus:border-alura-cyan"
             />
           </div>

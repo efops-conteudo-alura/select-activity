@@ -12,20 +12,14 @@ export const authOptions: any = {
         password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email) return null;
 
+        const normalizedEmail = credentials.email.trim().toLowerCase();
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: normalizedEmail },
         });
 
         if (!user) return null;
-
-        if (!user.password) {
-          throw new Error("NeedPassword");
-        }
-
-        const passwordMatch = await bcrypt.compare(credentials.password, user.password);
-        if (!passwordMatch) return null;
 
         const appRole = await prisma.appRole.findUnique({
           where: { userId_app: { userId: user.id, app: "select-activity" } },
@@ -34,6 +28,18 @@ export const authOptions: any = {
         if (!appRole) {
           throw new Error("NoAccess");
         }
+
+        // Instrutores sem senha: autenticam só com email
+        if (!user.password) {
+          if (appRole.role === "INSTRUCTOR") {
+            return { id: user.id, email: user.email, name: user.name, role: appRole.role };
+          }
+          throw new Error("NeedPassword");
+        }
+
+        if (!credentials.password) return null;
+        const passwordMatch = await bcrypt.compare(credentials.password, user.password);
+        if (!passwordMatch) return null;
 
         return { id: user.id, email: user.email, name: user.name, role: appRole.role };
       },
