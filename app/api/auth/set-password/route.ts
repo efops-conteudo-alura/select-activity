@@ -19,14 +19,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Conta não encontrada." }, { status: 404 });
   }
 
-  const appRole = await prisma.appRole.findUnique({
-    where: { userId_app: { userId: user.id, app: "select-activity" } },
-  });
-
-  if (!appRole) {
-    return NextResponse.json({ error: "Você não tem acesso a este sistema." }, { status: 403 });
-  }
-
   if (user.password) {
     return NextResponse.json(
       { error: "Esta conta já tem senha. Entre normalmente pelo login." },
