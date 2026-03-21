@@ -20,6 +20,7 @@ type Props = {
   editingExerciseId?: string | null;
   onEditToggle?: (exerciseId: string) => void;
   onRestore?: (lessonNumber: number, exercise: Exercise) => void;
+  onRemove?: (lessonNumber: number, exerciseId: string) => void;
   defaultOpen?: boolean;
 };
 
@@ -37,6 +38,7 @@ export function LessonAccordion({
   editingExerciseId,
   onEditToggle,
   onRestore,
+  onRemove,
   defaultOpen = false,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
@@ -69,6 +71,7 @@ export function LessonAccordion({
                 isEditing={editingExerciseId === exercise.id}
                 onEditToggle={onEditToggle}
                 onRestore={onRestore}
+                onRemove={onRemove}
                 comment={comments?.[exercise.id]}
                 onCommentChange={onCommentChange}
                 onExerciseChange={onExerciseChange}

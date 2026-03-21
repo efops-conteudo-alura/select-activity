@@ -15,6 +15,8 @@ type Props = {
   onEditToggle?: (exerciseId: string) => void;
   // Restaurar exercício não selecionado (coordenador)
   onRestore?: (lessonNumber: number, exercise: Exercise) => void;
+  // Remover exercício selecionado (coordenador)
+  onRemove?: (lessonNumber: number, exerciseId: string) => void;
   comment?: string;
   onCommentChange?: (lessonNumber: number, exerciseId: string, comment: string) => void;
   onExerciseChange?: (lessonNumber: number, exerciseId: string, changes: Partial<Exercise>) => void;
@@ -33,6 +35,7 @@ export function ExerciseCard({
   isEditing = false,
   onEditToggle,
   onRestore,
+  onRemove,
   comment,
   onCommentChange,
   onExerciseChange,
@@ -245,18 +248,28 @@ export function ExerciseCard({
       )}
 
       {/* Botões de ação do coordenador */}
-      {onEditToggle && (
-        <div className="flex justify-end pt-1">
-          <button
-            onClick={() => onEditToggle(exercise.id)}
-            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-              isEditing
-                ? "bg-alura-cyan/20 text-alura-cyan hover:bg-alura-cyan/30"
-                : "bg-alura-blue-light/10 text-alura-blue-light/60 hover:text-alura-blue-light hover:bg-alura-blue-light/20"
-            }`}
-          >
-            {isEditing ? "✓ Concluir edição" : "Editar"}
-          </button>
+      {(onEditToggle || onRemove) && (
+        <div className="flex justify-end gap-2 pt-1">
+          {onRemove && (
+            <button
+              onClick={() => onRemove(lesson.lessonNumber, exercise.id)}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-400/10 text-red-400/70 hover:text-red-400 hover:bg-red-400/20 transition-colors"
+            >
+              Excluir
+            </button>
+          )}
+          {onEditToggle && (
+            <button
+              onClick={() => onEditToggle(exercise.id)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+                isEditing
+                  ? "bg-alura-cyan/20 text-alura-cyan hover:bg-alura-cyan/30"
+                  : "bg-alura-blue-light/10 text-alura-blue-light/60 hover:text-alura-blue-light hover:bg-alura-blue-light/20"
+              }`}
+            >
+              {isEditing ? "✓ Concluir edição" : "Editar"}
+            </button>
+          )}
         </div>
       )}
 

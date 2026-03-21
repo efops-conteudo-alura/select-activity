@@ -48,6 +48,21 @@ export default function SubmissaoDetailPage({
     setEditingExerciseId((prev) => (prev === exerciseId ? null : exerciseId));
   }
 
+  function handleRemove(lessonNumber: number, exerciseId: string) {
+    setEditingExerciseId((prev) => (prev === exerciseId ? null : prev));
+    setEditedLessons((prev) => {
+      const updated = prev.map((lesson) => {
+        if (lesson.lessonNumber !== lessonNumber) return lesson;
+        return {
+          ...lesson,
+          exercises: lesson.exercises.filter((ex) => ex.id !== exerciseId),
+        };
+      });
+      // Remover a aula se ficou sem exercícios
+      return updated.filter((l) => l.exercises.length > 0);
+    });
+  }
+
   function handleRestore(lessonNumber: number, exercise: Exercise) {
     setEditedLessons((prev) => {
       const lessonIndex = prev.findIndex((l) => l.lessonNumber === lessonNumber);
@@ -197,7 +212,7 @@ export default function SubmissaoDetailPage({
             <span className="w-2 h-2 rounded-full bg-yellow-400/60 inline-block"></span>
             alternativa correta alterada
           </span>
-          <span>Clique em <strong className="text-alura-blue-light/60">Editar</strong> para modificar um exercício antes de exportar.</span>
+          <span>Clique em <strong className="text-alura-blue-light/60">Editar</strong> para modificar um exercício antes de exportar. Você também pode excluir atividades selecionadas ou incluir as que foram excluídas.</span>
         </div>
 
         {/* Exercícios selecionados pelo instrutor */}
@@ -213,6 +228,7 @@ export default function SubmissaoDetailPage({
                 originalLesson={originalLessonsByNumber[lesson.lessonNumber]}
                 editingExerciseId={editingExerciseId}
                 onEditToggle={handleEditToggle}
+                onRemove={handleRemove}
                 onExerciseChange={handleExerciseChange}
                 onAlternativeChange={handleAlternativeChange}
                 defaultOpen
