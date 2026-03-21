@@ -3,7 +3,10 @@
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { LessonAccordion } from "@/components/LessonAccordion";
+import { StepBar } from "@/components/StepBar";
 import { clearCourse } from "@/lib/storage";
+
+const INSTRUCTOR_STEPS = ["Upload", "Seleção", "Edição", "Enviar"];
 
 export default function ReviewPage() {
   const router = useRouter();
@@ -51,21 +54,22 @@ export default function ReviewPage() {
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 bg-alura-blue-deep border-b border-alura-blue-light/10 px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="font-[family-name:var(--font-chakra-petch)] font-bold text-alura-cyan text-lg">
-            {course.courseId}
-          </h1>
-          <p className="text-alura-blue-light/50 text-xs">
-            {isInstructor ? "Revise e edite os exercícios selecionados" : "Visualização (somente leitura)"}
-          </p>
+      <header className="sticky top-0 z-10 bg-alura-blue-deep border-b border-alura-blue-light/10 px-6 py-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-alura-blue-light/40 text-xs">{course.courseId}</p>
+            <h1 className="font-[family-name:var(--font-chakra-petch)] font-bold text-alura-cyan text-lg leading-tight">
+              {isInstructor ? "Edição das atividades selecionadas" : "Visualização (somente leitura)"}
+            </h1>
+          </div>
+          <button
+            onClick={handleClear}
+            className="text-red-400 hover:text-red-300 text-sm transition-colors"
+          >
+            🗑 Limpar
+          </button>
         </div>
-        <button
-          onClick={handleClear}
-          className="text-red-400 hover:text-red-300 text-sm transition-colors"
-        >
-          🗑 Limpar
-        </button>
+        {isInstructor && <StepBar steps={INSTRUCTOR_STEPS} current={3} />}
       </header>
 
       <main className="flex flex-col gap-4 px-6 py-6 max-w-3xl mx-auto w-full flex-1">
@@ -86,7 +90,13 @@ export default function ReviewPage() {
 
       {isInstructor && (
         <footer className="sticky bottom-0 bg-alura-blue-dark border-t border-alura-blue-light/10 px-6 py-4">
-          <div className="max-w-3xl mx-auto flex justify-end">
+          <div className="max-w-3xl mx-auto flex justify-between">
+            <button
+              onClick={() => router.push("/select")}
+              className="border border-alura-blue-light/20 hover:border-alura-blue-light/40 text-alura-blue-light/60 hover:text-alura-blue-light font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
+            >
+              ← Voltar para seleção
+            </button>
             <button
               onClick={() => router.push("/enviar")}
               className="bg-alura-cyan hover:bg-alura-cyan/80 text-alura-blue-deep font-bold px-8 py-3 rounded-xl transition-colors"

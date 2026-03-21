@@ -8,7 +8,13 @@ type Props = {
   selectable?: boolean;
   onToggle?: (lesson: Lesson, exercise: Exercise) => void;
   readOnly?: boolean;
+  // Modo edição inline (instrutor em /review)
   editable?: boolean;
+  // Modo edição por exercício (coordenador em /submissoes/[id])
+  isEditing?: boolean;
+  onEditToggle?: (exerciseId: string) => void;
+  // Restaurar exercício não selecionado (coordenador)
+  onRestore?: (lessonNumber: number, exercise: Exercise) => void;
   comment?: string;
   onCommentChange?: (lessonNumber: number, exerciseId: string, comment: string) => void;
   onExerciseChange?: (lessonNumber: number, exerciseId: string, changes: Partial<Exercise>) => void;
@@ -24,14 +30,24 @@ export function ExerciseCard({
   onToggle,
   readOnly = false,
   editable = false,
+  isEditing = false,
+  onEditToggle,
+  onRestore,
   comment,
   onCommentChange,
   onExerciseChange,
   onAlternativeChange,
   originalExercise,
 }: Props) {
+  // Coordenador está no modo de edição por exercício
+  const showEditableInputs = editable || isEditing;
+
   return (
-    <div className="bg-alura-blue-dark/40 rounded-xl border border-alura-blue-light/20 p-4 flex flex-col gap-3">
+    <div className={`rounded-xl border p-4 flex flex-col gap-3 ${
+      isEditing
+        ? "bg-alura-blue-dark/60 border-alura-cyan/30"
+        : "bg-alura-blue-dark/40 border-alura-blue-light/20"
+    }`}>
       {/* Título e enunciado — modo seleção */}
       {selectable && (
         <label className="flex items-start gap-3 cursor-pointer">
@@ -48,8 +64,8 @@ export function ExerciseCard({
         </label>
       )}
 
-      {/* Título e enunciado — modo edição */}
-      {!selectable && editable && (
+      {/* Título e enunciado — modo edição (inputs) */}
+      {!selectable && showEditableInputs && (
         <div className="flex flex-col gap-2">
           <label className="text-xs text-alura-blue-light/50 uppercase tracking-wide">Título</label>
           <textarea
@@ -73,7 +89,7 @@ export function ExerciseCard({
       )}
 
       {/* Título e enunciado — modo leitura (com diff opcional) */}
-      {!selectable && !editable && (
+      {!selectable && !showEditableInputs && (
         <div className="flex flex-col gap-1">
           {originalExercise && originalExercise.title !== exercise.title && (
             <p className="text-xs line-through text-red-400/70">{originalExercise.title}</p>
@@ -94,7 +110,7 @@ export function ExerciseCard({
           const opinionChanged = origAlt && origAlt.opinion !== alt.opinion;
           const correctChanged = origAlt && origAlt.correct !== alt.correct;
 
-          if (editable) {
+          if (showEditableInputs) {
             return (
               <div
                 key={i}
@@ -178,7 +194,7 @@ export function ExerciseCard({
         })}
       </div>
 
-      {/* Comentário — editável (instrutor) */}
+      {/* Comentário — editável (instrutor em /review) */}
       {onCommentChange !== undefined && (
         <div className="flex flex-col gap-1">
           <label className="text-xs text-alura-blue-light/60">Comentário opcional</label>
@@ -195,13 +211,64 @@ export function ExerciseCard({
         </div>
       )}
 
-      {/* Comentário do instrutor — somente leitura (coordenador) */}
-      {readOnly && exercise.comment && (
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-alura-blue-light/60">Comentário do instrutor</label>
-          <p className="text-sm text-alura-blue-light/70 bg-alura-blue-deep/50 rounded-lg px-3 py-2 border border-alura-blue-light/10">
-            {exercise.comment}
-          </p>
+      {/* Comentário do instrutor + diff (modo leitura, para coordenador) */}
+      {!showEditableInputs && !onCommentChange && (
+        <>
+          {originalExercise && !originalExercise.comment && exercise.comment && (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-alura-cyan/70">Comentário adicionado pelo instrutor</label>
+              <p className="text-sm text-alura-blue-light/70 bg-alura-cyan/5 rounded-lg px-3 py-2 border border-alura-cyan/20">
+                {exercise.comment}
+              </p>
+            </div>
+          )}
+          {originalExercise && originalExercise.comment && originalExercise.comment !== exercise.comment && (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-alura-blue-light/60">Comentário (editado pelo instrutor)</label>
+              <p className="text-xs line-through text-red-400/70 bg-alura-blue-deep/50 rounded px-3 py-1">
+                {originalExercise.comment}
+              </p>
+              <p className="text-sm text-alura-blue-light/70 bg-alura-blue-deep/50 rounded-lg px-3 py-2 border border-alura-blue-light/10">
+                {exercise.comment}
+              </p>
+            </div>
+          )}
+          {!originalExercise && exercise.comment && (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-alura-blue-light/60">Comentário do instrutor</label>
+              <p className="text-sm text-alura-blue-light/70 bg-alura-blue-deep/50 rounded-lg px-3 py-2 border border-alura-blue-light/10">
+                {exercise.comment}
+              </p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Botões de ação do coordenador */}
+      {onEditToggle && (
+        <div className="flex justify-end pt-1">
+          <button
+            onClick={() => onEditToggle(exercise.id)}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+              isEditing
+                ? "bg-alura-cyan/20 text-alura-cyan hover:bg-alura-cyan/30"
+                : "bg-alura-blue-light/10 text-alura-blue-light/60 hover:text-alura-blue-light hover:bg-alura-blue-light/20"
+            }`}
+          >
+            {isEditing ? "✓ Concluir edição" : "Editar"}
+          </button>
+        </div>
+      )}
+
+      {/* Botão restaurar (exercício não selecionado) */}
+      {onRestore && (
+        <div className="flex justify-end pt-1">
+          <button
+            onClick={() => onRestore(lesson.lessonNumber, exercise)}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-alura-cyan/10 text-alura-cyan hover:bg-alura-cyan/20 transition-colors"
+          >
+            + Incluir na seleção
+          </button>
         </div>
       )}
     </div>

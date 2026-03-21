@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
+import { StepBar } from "@/components/StepBar";
 import { clearCourse } from "@/lib/storage";
+
+const INSTRUCTOR_STEPS = ["Upload", "Seleção", "Edição", "Enviar"];
 
 interface Coordenador {
   id: string;
   name: string;
-  email: string;
 }
 
 export default function EnviarPage() {
@@ -99,53 +101,64 @@ export default function EnviarPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col px-6 py-10 max-w-lg mx-auto w-full gap-8">
-      <div>
-        <h1 className="font-[family-name:var(--font-chakra-petch)] text-2xl font-bold text-alura-cyan">
-          Enviar para coordenador
-        </h1>
-        <p className="text-alura-blue-light/50 text-sm mt-1">
-          {course.courseId} · {totalExercises} exercício{totalExercises !== 1 ? "s" : ""} de{" "}
-          {selectedLessons.length} aula{selectedLessons.length !== 1 ? "s" : ""}
+    <div className="flex flex-col flex-1">
+      <header className="sticky top-0 z-10 bg-alura-blue-deep border-b border-alura-blue-light/10 px-6 py-4 flex flex-col gap-3">
+        <div>
+          <p className="text-alura-blue-light/40 text-xs">{course.courseId}</p>
+          <h1 className="font-[family-name:var(--font-chakra-petch)] font-bold text-alura-cyan text-lg leading-tight">
+            Enviar para coordenador
+          </h1>
+        </div>
+        <StepBar steps={INSTRUCTOR_STEPS} current={4} />
+      </header>
+
+      <main className="flex flex-1 flex-col px-6 py-10 max-w-lg mx-auto w-full gap-6">
+        <p className="text-alura-blue-light/50 text-sm">
+          {totalExercises} exercício{totalExercises !== 1 ? "s" : ""} de{" "}
+          {selectedLessons.length} aula{selectedLessons.length !== 1 ? "s" : ""} prontos para envio.
         </p>
-      </div>
 
-      <div className="bg-alura-blue-dark rounded-2xl border border-alura-blue-light/20 p-6 flex flex-col gap-4">
-        <label className="text-sm font-medium text-alura-blue-light">
-          Selecione o coordenador responsável
-        </label>
-        <select
-          value={selectedCoordId}
-          onChange={(e) => setSelectedCoordId(e.target.value)}
-          className="w-full rounded-lg bg-alura-blue-deep border border-alura-blue-light/20 px-3 py-2 text-sm text-alura-blue-light focus:outline-none focus:border-alura-cyan"
-        >
-          <option value="">— escolha um coordenador —</option>
-          {coordenadores.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name} ({c.email})
-            </option>
-          ))}
-        </select>
+        <div className="bg-alura-blue-dark rounded-2xl border border-alura-blue-light/20 p-6 flex flex-col gap-4">
+          <label className="text-sm font-medium text-alura-blue-light">
+            Selecione o coordenador responsável
+          </label>
+          <select
+            value={selectedCoordId}
+            onChange={(e) => setSelectedCoordId(e.target.value)}
+            className="w-full rounded-lg bg-alura-blue-deep border border-alura-blue-light/20 px-3 py-2 text-sm text-alura-blue-light focus:outline-none focus:border-alura-cyan"
+          >
+            <option value="">— escolha um coordenador —</option>
+            {coordenadores.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
 
-        {error && (
-          <p className="text-red-400 text-sm bg-red-400/10 px-3 py-2 rounded-lg">{error}</p>
-        )}
+          {error && (
+            <p className="text-red-400 text-sm bg-red-400/10 px-3 py-2 rounded-lg">{error}</p>
+          )}
 
-        <button
-          onClick={handleEnviar}
-          disabled={loading || !selectedCoordId}
-          className="bg-alura-cyan hover:bg-alura-cyan/80 disabled:opacity-50 text-alura-blue-deep font-bold py-3 rounded-xl transition-colors text-sm"
-        >
-          {loading ? "Enviando..." : "Enviar seleção"}
-        </button>
-      </div>
+          <button
+            onClick={handleEnviar}
+            disabled={loading || !selectedCoordId}
+            className="bg-alura-cyan hover:bg-alura-cyan/80 disabled:opacity-50 text-alura-blue-deep font-bold py-3 rounded-xl transition-colors text-sm"
+          >
+            {loading ? "Enviando..." : "Enviar seleção"}
+          </button>
+        </div>
+      </main>
 
-      <button
-        onClick={() => router.back()}
-        className="text-alura-blue-light/50 text-sm hover:text-alura-blue-light transition-colors"
-      >
-        ← Voltar
-      </button>
-    </main>
+      <footer className="sticky bottom-0 bg-alura-blue-dark border-t border-alura-blue-light/10 px-6 py-4">
+        <div className="max-w-lg mx-auto">
+          <button
+            onClick={() => router.push("/review")}
+            className="border border-alura-blue-light/20 hover:border-alura-blue-light/40 text-alura-blue-light/60 hover:text-alura-blue-light font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
+          >
+            ← Voltar para edição
+          </button>
+        </div>
+      </footer>
+    </div>
   );
 }

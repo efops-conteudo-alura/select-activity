@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { LessonAccordion } from "@/components/LessonAccordion";
 import { exportSelectedCourse } from "@/lib/export";
-import type { Course, Lesson } from "@/types/course";
+import type { Alternative, Course, Exercise, Lesson } from "@/types/course";
 
 interface SubmissionDetail {
   id: string;
@@ -28,8 +28,10 @@ export default function SubmissaoDetailPage({
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  // submittedData editável pelo coordenador
+  // Exercícios editáveis pelo coordenador
   const [editedLessons, setEditedLessons] = useState<Lesson[]>([]);
+  // ID do exercício que está em modo edição (apenas um por vez)
+  const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/submissoes/${id}`)
@@ -42,29 +44,29 @@ export default function SubmissaoDetailPage({
       .catch(() => setLoading(false));
   }, [id]);
 
-  async function handleExport() {
-    if (!submission) return;
-    setExporting(true);
-
-    const courseToExport: Course = {
-      courseId: submission.courseId,
-      lessons: editedLessons,
-    };
-
-    exportSelectedCourse(courseToExport, editedLessons);
-
-    // Marcar como exportado no banco
-    await fetch(`/api/submissoes/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "exported", submittedData: { courseId: submission.courseId, lessons: editedLessons } }),
-    });
-
-    setSubmission((prev) => prev ? { ...prev, status: "exported" } : prev);
-    setExporting(false);
+  function handleEditToggle(exerciseId: string) {
+    setEditingExerciseId((prev) => (prev === exerciseId ? null : exerciseId));
   }
 
-  function handleExerciseChange(lessonNumber: number, exerciseId: string, changes: Partial<import("@/types/course").Exercise>) {
+  function handleRestore(lessonNumber: number, exercise: Exercise) {
+    setEditedLessons((prev) => {
+      const lessonIndex = prev.findIndex((l) => l.lessonNumber === lessonNumber);
+      if (lessonIndex !== -1) {
+        const updated = [...prev];
+        updated[lessonIndex] = {
+          ...updated[lessonIndex],
+          exercises: [...updated[lessonIndex].exercises, exercise],
+        };
+        return updated;
+      }
+      return [
+        ...prev,
+        { lessonNumber, exercises: [exercise] },
+      ].sort((a, b) => a.lessonNumber - b.lessonNumber);
+    });
+  }
+
+  function handleExerciseChange(lessonNumber: number, exerciseId: string, changes: Partial<Exercise>) {
     setEditedLessons((prev) =>
       prev.map((lesson) => {
         if (lesson.lessonNumber !== lessonNumber) return lesson;
@@ -82,7 +84,7 @@ export default function SubmissaoDetailPage({
     lessonNumber: number,
     exerciseId: string,
     altIndex: number,
-    changes: Partial<import("@/types/course").Alternative>
+    changes: Partial<Alternative>
   ) {
     setEditedLessons((prev) =>
       prev.map((lesson) => {
@@ -103,6 +105,30 @@ export default function SubmissaoDetailPage({
     );
   }
 
+  async function handleExport() {
+    if (!submission) return;
+    setExporting(true);
+
+    const courseToExport: Course = {
+      courseId: submission.courseId,
+      lessons: editedLessons,
+    };
+
+    exportSelectedCourse(courseToExport, editedLessons);
+
+    await fetch(`/api/submissoes/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "exported",
+        submittedData: { courseId: submission.courseId, lessons: editedLessons },
+      }),
+    });
+
+    setSubmission((prev) => (prev ? { ...prev, status: "exported" } : prev));
+    setExporting(false);
+  }
+
   if (loading) {
     return (
       <main className="flex flex-1 items-center justify-center">
@@ -115,49 +141,42 @@ export default function SubmissaoDetailPage({
     return (
       <main className="flex flex-1 items-center justify-center flex-col gap-4">
         <p className="text-alura-blue-light/60">Submissão não encontrada.</p>
-        <button onClick={() => router.push("/submissoes")} className="text-alura-cyan text-sm hover:underline">
+        <button
+          onClick={() => router.push("/submissoes")}
+          className="text-alura-cyan text-sm hover:underline"
+        >
           Voltar
         </button>
       </main>
     );
   }
 
-  // Montar mapa de exercícios originais por ID para diff
-  const originalExercisesById: Record<string, import("@/types/course").Exercise> = {};
-  submission.originalData.lessons.forEach((lesson) => {
-    lesson.exercises.forEach((ex) => {
-      originalExercisesById[ex.id] = ex;
-    });
-  });
-
-  // Montar originalLesson por lessonNumber para passar ao accordion
+  // Mapa de aulas originais por lessonNumber
   const originalLessonsByNumber: Record<number, Lesson> = {};
   submission.originalData.lessons.forEach((lesson) => {
     originalLessonsByNumber[lesson.lessonNumber] = lesson;
   });
 
-  // IDs de exercícios selecionados pelo instrutor
-  const selectedIds = new Set(
-    editedLessons.flatMap((l) => l.exercises.map((e) => e.id))
-  );
+  // IDs de exercícios já na seleção
+  const selectedIds = new Set(editedLessons.flatMap((l) => l.exercises.map((e) => e.id)));
 
-  // Aulas do original que NÃO foram selecionadas (ou parcialmente selecionadas)
-  const originalLessons = submission.originalData.lessons;
+  const hasNonSelected = submission.originalData.lessons.some((l) =>
+    l.exercises.some((ex) => !selectedIds.has(ex.id))
+  );
 
   return (
     <div className="flex flex-col flex-1">
       <header className="sticky top-0 z-10 bg-alura-blue-deep border-b border-alura-blue-light/10 px-6 py-4 flex items-center justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-chakra-petch)] font-bold text-alura-cyan text-lg">
+          <p className="text-alura-blue-light/40 text-xs">
+            Enviado por {submission.instructor.name} · {new Date(submission.createdAt).toLocaleDateString("pt-BR")}
+          </p>
+          <h1 className="font-[family-name:var(--font-chakra-petch)] font-bold text-alura-cyan text-lg leading-tight">
             {submission.courseId}
           </h1>
-          <p className="text-alura-blue-light/50 text-xs">
-            Instrutor: {submission.instructor.name} ·{" "}
-            {new Date(submission.createdAt).toLocaleDateString("pt-BR")}
-            {submission.status === "exported" && (
-              <span className="ml-2 text-green-400">· exportado</span>
-            )}
-          </p>
+          {submission.status === "exported" && (
+            <span className="text-xs text-green-400">exportado</span>
+          )}
         </div>
         <button
           onClick={() => router.push("/submissoes")}
@@ -168,61 +187,58 @@ export default function SubmissaoDetailPage({
       </header>
 
       <main className="flex flex-col gap-6 px-6 py-6 max-w-3xl mx-auto w-full flex-1">
-        {/* Legenda do diff */}
-        <div className="flex flex-wrap gap-4 text-xs text-alura-blue-light/50">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-alura-cyan/60 inline-block"></span>
-            exercício selecionado pelo instrutor
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-alura-blue-light/20 inline-block"></span>
-            não selecionado
-          </span>
+        {/* Legenda */}
+        <div className="flex flex-wrap gap-4 text-xs text-alura-blue-light/40 bg-alura-blue-dark/40 rounded-xl px-4 py-3">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-red-400/60 inline-block"></span>
-            texto original (riscado = alterado)
+            texto riscado = original antes da edição do instrutor
           </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-yellow-400/60 inline-block"></span>
+            alternativa correta alterada
+          </span>
+          <span>Clique em <strong className="text-alura-blue-light/60">Editar</strong> para modificar um exercício antes de exportar.</span>
         </div>
 
-        {/* Aulas selecionadas pelo instrutor (editáveis pelo coordenador) */}
+        {/* Exercícios selecionados pelo instrutor */}
         {editedLessons.length > 0 && (
           <section className="flex flex-col gap-3">
             <h2 className="text-xs font-semibold text-alura-blue-light/60 uppercase tracking-wide">
-              Exercícios selecionados pelo instrutor
+              Selecionados pelo instrutor
             </h2>
             {editedLessons.map((lesson) => (
               <LessonAccordion
                 key={lesson.lessonNumber}
                 lesson={lesson}
-                editable
+                originalLesson={originalLessonsByNumber[lesson.lessonNumber]}
+                editingExerciseId={editingExerciseId}
+                onEditToggle={handleEditToggle}
                 onExerciseChange={handleExerciseChange}
                 onAlternativeChange={handleAlternativeChange}
-                originalLesson={originalLessonsByNumber[lesson.lessonNumber]}
                 defaultOpen
               />
             ))}
           </section>
         )}
 
-        {/* Exercícios NÃO selecionados — para referência */}
-        {originalLessons.some((l) =>
-          l.exercises.some((ex) => !selectedIds.has(ex.id))
-        ) && (
+        {/* Exercícios NÃO selecionados */}
+        {hasNonSelected && (
           <section className="flex flex-col gap-3">
             <h2 className="text-xs font-semibold text-alura-blue-light/40 uppercase tracking-wide">
-              Não selecionados pelo instrutor
+              Não selecionados pelo instrutor — clique para incluir
             </h2>
-            {originalLessons.map((lesson) => {
+            {submission.originalData.lessons.map((lesson) => {
               const notSelected = {
                 ...lesson,
                 exercises: lesson.exercises.filter((ex) => !selectedIds.has(ex.id)),
               };
               if (notSelected.exercises.length === 0) return null;
               return (
-                <div key={lesson.lessonNumber} className="opacity-40">
+                <div key={lesson.lessonNumber} className="opacity-60">
                   <LessonAccordion
                     lesson={notSelected}
                     readOnly
+                    onRestore={handleRestore}
                     defaultOpen={false}
                   />
                 </div>
@@ -236,7 +252,7 @@ export default function SubmissaoDetailPage({
         <div className="max-w-3xl mx-auto flex justify-end">
           <button
             onClick={handleExport}
-            disabled={exporting}
+            disabled={exporting || editedLessons.length === 0}
             className="bg-alura-cyan hover:bg-alura-cyan/80 disabled:opacity-50 text-alura-blue-deep font-bold px-8 py-3 rounded-xl transition-colors"
           >
             {exporting ? "Exportando..." : "⬇ Exportar JSON"}

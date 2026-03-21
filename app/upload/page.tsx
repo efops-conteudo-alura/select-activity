@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import { DropZone } from "@/components/DropZone";
+import { StepBar } from "@/components/StepBar";
 import { saveCourse } from "@/lib/storage";
 import type { Course } from "@/types/course";
+
+const INSTRUCTOR_STEPS = ["Upload", "Seleção", "Edição", "Enviar"];
 
 export default function UploadPage() {
   const router = useRouter();
@@ -53,6 +56,10 @@ export default function UploadPage() {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16 max-w-lg mx-auto w-full">
+      {personType === "instructor" && (
+        <StepBar steps={INSTRUCTOR_STEPS} current={1} />
+      )}
+
       {personType === "coordinator" && (
         <div className="w-full bg-alura-blue-dark border border-alura-blue-light/20 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
           <p className="text-alura-blue-light/60 text-sm">

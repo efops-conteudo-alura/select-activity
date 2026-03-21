@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { LessonAccordion } from "@/components/LessonAccordion";
+import { StepBar } from "@/components/StepBar";
+
+const INSTRUCTOR_STEPS = ["Upload", "Seleção", "Edição", "Enviar"];
 
 export default function SelectPage() {
   const router = useRouter();
@@ -43,16 +46,22 @@ export default function SelectPage() {
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 bg-alura-blue-deep border-b border-alura-blue-light/10 px-6 py-4 flex items-center justify-between">
-        <h1 className="font-[family-name:var(--font-chakra-petch)] font-bold text-alura-cyan text-lg">
-          {course.courseId}
-        </h1>
-        <button
-          onClick={handleClear}
-          className="text-red-400 hover:text-red-300 text-sm transition-colors"
-        >
-          🗑 Limpar
-        </button>
+      <header className="sticky top-0 z-10 bg-alura-blue-deep border-b border-alura-blue-light/10 px-6 py-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-alura-blue-light/40 text-xs">{course.courseId}</p>
+            <h1 className="font-[family-name:var(--font-chakra-petch)] font-bold text-alura-cyan text-lg leading-tight">
+              Seleção de atividades
+            </h1>
+          </div>
+          <button
+            onClick={handleClear}
+            className="text-red-400 hover:text-red-300 text-sm transition-colors"
+          >
+            🗑 Limpar
+          </button>
+        </div>
+        <StepBar steps={INSTRUCTOR_STEPS} current={2} />
       </header>
 
       <main className="flex flex-col gap-4 px-6 py-6 max-w-3xl mx-auto w-full flex-1">
@@ -83,12 +92,20 @@ export default function SelectPage() {
               </span>
             )}
           </div>
-          <button
-            onClick={handleNext}
-            className="bg-alura-blue hover:bg-alura-blue/80 text-white font-semibold px-8 py-3 rounded-xl transition-colors"
-          >
-            Próximo →
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => router.push("/upload")}
+              className="border border-alura-blue-light/20 hover:border-alura-blue-light/40 text-alura-blue-light/60 hover:text-alura-blue-light font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
+            >
+              ← Voltar
+            </button>
+            <button
+              onClick={handleNext}
+              className="bg-alura-cyan hover:bg-alura-cyan/80 text-alura-blue-deep font-bold px-8 py-3 rounded-xl transition-colors"
+            >
+              Próximo →
+            </button>
+          </div>
         </div>
       </footer>
     </div>

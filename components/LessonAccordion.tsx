@@ -15,8 +15,11 @@ type Props = {
   onCommentChange?: (lessonNumber: number, exerciseId: string, comment: string) => void;
   onExerciseChange?: (lessonNumber: number, exerciseId: string, changes: Partial<Exercise>) => void;
   onAlternativeChange?: (lessonNumber: number, exerciseId: string, altIndex: number, changes: Partial<Alternative>) => void;
-  // originalLesson para diff (coordenador)
+  // Para diff e edição por exercício (coordenador)
   originalLesson?: Lesson;
+  editingExerciseId?: string | null;
+  onEditToggle?: (exerciseId: string) => void;
+  onRestore?: (lessonNumber: number, exercise: Exercise) => void;
   defaultOpen?: boolean;
 };
 
@@ -31,6 +34,9 @@ export function LessonAccordion({
   onExerciseChange,
   onAlternativeChange,
   originalLesson,
+  editingExerciseId,
+  onEditToggle,
+  onRestore,
   defaultOpen = false,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
@@ -60,6 +66,9 @@ export function LessonAccordion({
                 onToggle={onToggle}
                 readOnly={readOnly}
                 editable={editable}
+                isEditing={editingExerciseId === exercise.id}
+                onEditToggle={onEditToggle}
+                onRestore={onRestore}
                 comment={comments?.[exercise.id]}
                 onCommentChange={onCommentChange}
                 onExerciseChange={onExerciseChange}
