@@ -14,6 +14,8 @@ export async function GET() {
   const where =
     role === "INSTRUCTOR"
       ? { instructorId: userId }
+      : role === "ADMIN"
+      ? {}
       : { coordinatorId: userId };
 
   const submissions = await prisma.submission.findMany({
