@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # CLAUDE.md — Seletor de Atividades (select-activity)
 
 Ferramenta interna da Alura para coordenadores e instrutores selecionarem e revisarem atividades de cursos. Compartilha o banco de dados Neon com o hub-efops.
@@ -30,20 +34,27 @@ npx prisma generate  # regenera o client (NUNCA migrate ou db push aqui)
 
 ```
 app/
-  page.tsx                     → Redirect por role (/upload para coordinator/admin, /select para instructor)
+  page.tsx                     → Redirect por role: INSTRUCTOR → /upload, COORDINATOR/ADMIN → /submissoes
   layout.tsx                   → Root layout com <Providers> e <Header>
   login/page.tsx               → Login (público)
   criar-senha/page.tsx         → Definir senha para usuários sem senha (público)
   primeiro-acesso/page.tsx     → Cadastro de coordenadores via AllowedEmail (público)
-  upload/page.tsx              → Upload de arquivo JSON (protegido)
+  upload/page.tsx              → Upload de arquivo JSON — INSTRUCTOR (protegido)
   select/page.tsx              → Seleção de atividades — INSTRUCTOR (protegido)
-  review/page.tsx              → Revisão final + export (protegido)
+  review/page.tsx              → Revisão + edição de exercícios — INSTRUCTOR (protegido)
+  enviar/page.tsx              → Seleciona coordenador e envia submissão — INSTRUCTOR (protegido)
+  submissoes/page.tsx          → Lista de submissões recebidas — COORDINATOR/ADMIN (protegido)
+  submissoes/[id]/page.tsx     → Detalhe da submissão com diff + edição + export — COORDINATOR/ADMIN (protegido)
+  instrutores/page.tsx         → Gerenciamento de instrutores — COORDINATOR/ADMIN (protegido)
   api/
     auth/
       [...nextauth]/route.ts   → Handler NextAuth v4
       register/route.ts        → Cadastro público (valida AllowedEmail)
       set-password/route.ts    → Define senha para usuário sem senha
-    instrutores/route.ts       → POST: cria instrutor (requer COORDINATOR ou ADMIN)
+    instrutores/route.ts       → GET: lista instrutores | POST: cria instrutor (requer COORDINATOR ou ADMIN)
+    coordenadores/route.ts     → GET: lista coordenadores/admins (qualquer usuário autenticado)
+    submissoes/route.ts        → GET: lista submissões do usuário | POST: cria submissão (INSTRUCTOR)
+    submissoes/[id]/route.ts   → GET: detalhe | PATCH: atualiza status/dados (COORDINATOR)
 components/
   Providers.tsx                → SessionProvider + AppProvider (deve ter "use client")
   Header.tsx                   → Header com email e botão Sair (usa useSession)
@@ -71,11 +82,11 @@ proxy.ts                       → Middleware de autenticação (Next.js 16.2)
 
 ### Roles do select-activity (via AppRole, app="select-activity")
 
-| Role | Acesso |
+| Role | Fluxo |
 |---|---|
-| `INSTRUCTOR` | Upload → Seleção de atividades (`/select`) → Revisão |
-| `COORDINATOR` | Upload → Revisão (`/review`, read-only) |
-| `ADMIN` | Mesmo que COORDINATOR |
+| `INSTRUCTOR` | `/upload` → `/select` → `/review` (edição) → `/enviar` (escolhe coordenador + envia) |
+| `COORDINATOR` | `/submissoes` (lista) → `/submissoes/[id]` (diff + edição + export JSON) |
+| `ADMIN` | Mesmo que `COORDINATOR` |
 
 ### Fluxo de acesso por tipo de usuário
 
@@ -102,38 +113,34 @@ proxy.ts                       → Middleware de autenticação (Next.js 16.2)
 
 ## Banco de dados
 
-O schema é mínimo — apenas os modelos necessários para o select-activity:
+O schema contém os modelos usados pelo select-activity. A `AllowedEmail` é gerenciada pelo hub-efops — este app só lê. O model `Submission` precisa de migration no hub-efops antes de ser usado.
+
+### Model Submission
 
 ```prisma
-model User {
-  id        String    @id @default(cuid())
-  name      String
-  email     String    @unique
-  password  String?
-  image     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  appRoles  AppRole[]
-}
-
-model AppRole {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  app       String   // "select-activity" ou "hub-efops"
-  role      String   // "INSTRUCTOR", "COORDINATOR", "ADMIN"
-  createdAt DateTime @default(now())
-  @@unique([userId, app])
-}
-
-model AllowedEmail {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
+model Submission {
+  id            String    @id @default(cuid())
+  instructorId  String
+  instructor    User      @relation("SubmissionInstructor", fields: [instructorId], references: [id])
+  coordinatorId String
+  coordinator   User      @relation("SubmissionCoordinator", fields: [coordinatorId], references: [id])
+  courseId      String
+  originalData  Json      // JSON completo original (todos os exercícios, antes das edições)
+  submittedData Json      // JSON com exercícios selecionados + edições + comentários do instrutor
+  status        String    @default("pending") // "pending" | "exported"
+  exportedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 ```
 
-A `AllowedEmail` é gerenciada pelo hub-efops — este app só lê.
+### Diff de edições
+
+`ExerciseCard` aceita `originalExercise?: Exercise`. Quando presente, exibe campos alterados com o texto original riscado (vermelho) acima do valor atual. O `originalData` da `Submission` serve como fonte do original.
+
+### Exercícios têm ID único
+
+IDs são gerados via `crypto.randomUUID()` no upload (`app/upload/page.tsx`). Todas as comparações de exercício usam `exercise.id`, nunca `exercise.title`.
 
 ---
 

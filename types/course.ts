@@ -5,6 +5,7 @@ export type Alternative = {
 };
 
 export type Exercise = {
+  id: string;
   title: string;
   text: string;
   kind: string;

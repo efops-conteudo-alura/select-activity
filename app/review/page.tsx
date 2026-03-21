@@ -3,13 +3,19 @@
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { LessonAccordion } from "@/components/LessonAccordion";
-import { exportSelectedCourse } from "@/lib/export";
 import { clearCourse } from "@/lib/storage";
 
 export default function ReviewPage() {
   const router = useRouter();
-  const { course, personType, selectedLessons, updateComment, clearAll } =
-    useApp();
+  const {
+    course,
+    personType,
+    selectedLessons,
+    updateComment,
+    updateExercise,
+    updateAlternative,
+    clearAll,
+  } = useApp();
 
   const isInstructor = personType === "instructor";
 
@@ -29,21 +35,17 @@ export default function ReviewPage() {
     );
   }
 
-  function handleExport() {
-    if (!course) return;
-    exportSelectedCourse(course, selectedLessons);
-  }
-
   function handleClear() {
     clearCourse();
     clearAll();
     router.push("/");
   }
 
+  // comments keyed by exercise.id
   const comments: Record<string, string> = {};
   selectedLessons.forEach((lesson) => {
     lesson.exercises.forEach((ex) => {
-      if (ex.comment) comments[ex.title] = ex.comment;
+      if (ex.comment) comments[ex.id] = ex.comment;
     });
   });
 
@@ -55,7 +57,7 @@ export default function ReviewPage() {
             {course.courseId}
           </h1>
           <p className="text-alura-blue-light/50 text-xs">
-            {isInstructor ? "Revisão e comentários" : "Visualização (somente leitura)"}
+            {isInstructor ? "Revise e edite os exercícios selecionados" : "Visualização (somente leitura)"}
           </p>
         </div>
         <button
@@ -72,8 +74,11 @@ export default function ReviewPage() {
             key={lesson.lessonNumber}
             lesson={lesson}
             readOnly={!isInstructor}
-            comments={comments}
+            editable={isInstructor}
+            comments={isInstructor ? comments : undefined}
             onCommentChange={isInstructor ? updateComment : undefined}
+            onExerciseChange={isInstructor ? updateExercise : undefined}
+            onAlternativeChange={isInstructor ? updateAlternative : undefined}
             defaultOpen
           />
         ))}
@@ -83,10 +88,10 @@ export default function ReviewPage() {
         <footer className="sticky bottom-0 bg-alura-blue-dark border-t border-alura-blue-light/10 px-6 py-4">
           <div className="max-w-3xl mx-auto flex justify-end">
             <button
-              onClick={handleExport}
+              onClick={() => router.push("/enviar")}
               className="bg-alura-cyan hover:bg-alura-cyan/80 text-alura-blue-deep font-bold px-8 py-3 rounded-xl transition-colors"
             >
-              ⬇ Salvar e Exportar JSON
+              Próximo →
             </button>
           </div>
         </footer>

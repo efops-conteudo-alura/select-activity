@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Exercise, Lesson } from "@/types/course";
+import type { Alternative, Exercise, Lesson } from "@/types/course";
 import { ExerciseCard } from "./ExerciseCard";
 
 type Props = {
@@ -9,8 +9,14 @@ type Props = {
   selectable?: boolean;
   onToggle?: (lesson: Lesson, exercise: Exercise) => void;
   readOnly?: boolean;
+  editable?: boolean;
+  // comments keyed by exercise.id
   comments?: Record<string, string>;
-  onCommentChange?: (lessonNumber: number, exerciseTitle: string, comment: string) => void;
+  onCommentChange?: (lessonNumber: number, exerciseId: string, comment: string) => void;
+  onExerciseChange?: (lessonNumber: number, exerciseId: string, changes: Partial<Exercise>) => void;
+  onAlternativeChange?: (lessonNumber: number, exerciseId: string, altIndex: number, changes: Partial<Alternative>) => void;
+  // originalLesson para diff (coordenador)
+  originalLesson?: Lesson;
   defaultOpen?: boolean;
 };
 
@@ -19,8 +25,12 @@ export function LessonAccordion({
   selectable = false,
   onToggle,
   readOnly = false,
+  editable = false,
   comments,
   onCommentChange,
+  onExerciseChange,
+  onAlternativeChange,
+  originalLesson,
   defaultOpen = false,
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
@@ -39,18 +49,25 @@ export function LessonAccordion({
 
       {open && (
         <div className="flex flex-col gap-3 p-4 bg-alura-blue-deep/60">
-          {lesson.exercises.map((exercise, i) => (
-            <ExerciseCard
-              key={i}
-              lesson={lesson}
-              exercise={exercise}
-              selectable={selectable}
-              onToggle={onToggle}
-              readOnly={readOnly}
-              comment={comments?.[exercise.title]}
-              onCommentChange={onCommentChange}
-            />
-          ))}
+          {lesson.exercises.map((exercise) => {
+            const origExercise = originalLesson?.exercises.find((e) => e.id === exercise.id);
+            return (
+              <ExerciseCard
+                key={exercise.id}
+                lesson={lesson}
+                exercise={exercise}
+                selectable={selectable}
+                onToggle={onToggle}
+                readOnly={readOnly}
+                editable={editable}
+                comment={comments?.[exercise.id]}
+                onCommentChange={onCommentChange}
+                onExerciseChange={onExerciseChange}
+                onAlternativeChange={onAlternativeChange}
+                originalExercise={origExercise}
+              />
+            );
+          })}
         </div>
       )}
     </div>

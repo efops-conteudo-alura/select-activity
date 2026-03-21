@@ -31,7 +31,12 @@ export default function HomePage() {
     if (personType) {
       setPersonType(personType);
     }
-    router.replace("/upload");
+    // Coordenadores e admins vão direto para a lista de submissões
+    if (session.user.role === "COORDINATOR" || session.user.role === "ADMIN") {
+      router.replace("/submissoes");
+    } else {
+      router.replace("/upload");
+    }
   }, [session, status, router, setPersonType]);
 
   return (

@@ -21,8 +21,21 @@ export default function UploadPage() {
         setError("O arquivo JSON não tem o formato esperado (courseId + lessons).");
         return;
       }
-      saveCourse(content);
-      setCourse(parsed);
+
+      // Gerar IDs únicos para cada exercício (necessário para edição e diff)
+      const courseWithIds: Course = {
+        ...parsed,
+        lessons: parsed.lessons.map((lesson) => ({
+          ...lesson,
+          exercises: lesson.exercises.map((ex) => ({
+            ...ex,
+            id: ex.id ?? crypto.randomUUID(),
+          })),
+        })),
+      };
+
+      saveCourse(JSON.stringify(courseWithIds));
+      setCourse(courseWithIds);
       if (personType === "instructor") {
         router.push("/select");
       } else {
