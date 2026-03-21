@@ -61,12 +61,15 @@ export default function SelectPage() {
             🗑 Limpar
           </button>
         </div>
-        <StepBar steps={INSTRUCTOR_STEPS} current={2} />
+        <div className="max-w-lg mx-auto w-full">
+          <StepBar steps={INSTRUCTOR_STEPS} current={2} />
+        </div>
       </header>
 
       <main className="flex flex-col gap-4 px-6 py-6 max-w-3xl mx-auto w-full flex-1">
         <p className="text-alura-blue-light/70 text-sm">
-          Selecione ao menos uma atividade por aula.
+          Selecione ao menos uma atividade por aula.{" "}
+          <span className="text-alura-blue-light/40">Você poderá editá-las no próximo passo.</span>
         </p>
 
         {course.lessons.map((lesson) => (

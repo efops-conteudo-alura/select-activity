@@ -57,7 +57,9 @@ export default function UploadPage() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16 max-w-lg mx-auto w-full">
       {personType === "instructor" && (
-        <StepBar steps={INSTRUCTOR_STEPS} current={1} />
+        <div className="w-full">
+          <StepBar steps={INSTRUCTOR_STEPS} current={1} />
+        </div>
       )}
 
       {personType === "coordinator" && (

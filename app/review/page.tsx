@@ -69,7 +69,11 @@ export default function ReviewPage() {
             🗑 Limpar
           </button>
         </div>
-        {isInstructor && <StepBar steps={INSTRUCTOR_STEPS} current={3} />}
+        {isInstructor && (
+          <div className="max-w-lg mx-auto w-full">
+            <StepBar steps={INSTRUCTOR_STEPS} current={3} />
+          </div>
+        )}
       </header>
 
       <main className="flex flex-col gap-4 px-6 py-6 max-w-3xl mx-auto w-full flex-1">

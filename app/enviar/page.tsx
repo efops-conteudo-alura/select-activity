@@ -109,7 +109,9 @@ export default function EnviarPage() {
             Enviar para coordenador
           </h1>
         </div>
-        <StepBar steps={INSTRUCTOR_STEPS} current={4} />
+        <div className="max-w-lg mx-auto w-full">
+          <StepBar steps={INSTRUCTOR_STEPS} current={4} />
+        </div>
       </header>
 
       <main className="flex flex-1 flex-col px-6 py-10 max-w-lg mx-auto w-full gap-6">
