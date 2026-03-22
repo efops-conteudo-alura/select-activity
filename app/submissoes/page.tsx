@@ -51,7 +51,7 @@ export default function SubmissoesPage() {
           onClick={() => router.push("/upload")}
           className="bg-alura-cyan hover:bg-alura-cyan/80 text-alura-blue-deep font-bold px-5 py-2.5 rounded-xl transition-colors text-sm"
         >
-          + Nova tarefa
+          + Nova submissão
         </button>
       </div>
 

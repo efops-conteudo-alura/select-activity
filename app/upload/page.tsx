@@ -14,14 +14,23 @@ interface Instructor {
   email: string;
 }
 
+type Mode = "existing" | "new";
+
 export default function UploadPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [course, setCourse] = useState<Course | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Instrutor existente
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [selectedInstructorId, setSelectedInstructorId] = useState("");
+
+  // Novo instrutor
+  const [mode, setMode] = useState<Mode>("existing");
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
@@ -40,7 +49,6 @@ export default function UploadPage() {
         return;
       }
 
-      // Gerar IDs únicos para cada exercício (necessário para edição e diff)
       const courseWithIds: Course = {
         ...parsed,
         lessons: parsed.lessons.map((lesson) => ({
@@ -60,20 +68,62 @@ export default function UploadPage() {
   }
 
   async function handleSend() {
-    if (!course || !selectedInstructorId) return;
+    if (!course) return;
     setSending(true);
     setError(null);
 
     try {
+      let instructorId = selectedInstructorId;
+
+      // Cadastrar novo instrutor se necessário
+      if (mode === "new") {
+        if (!newName.trim() || !newEmail.trim()) {
+          setError("Preencha o nome e o email do novo instrutor.");
+          setSending(false);
+          return;
+        }
+
+        const createRes = await fetch("/api/instrutores", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newName.trim(), email: newEmail.trim() }),
+        });
+
+        if (createRes.status === 409) {
+          setError("Este email já é um instrutor cadastrado. Use a opção 'Instrutor existente' para selecioná-lo.");
+          setSending(false);
+          return;
+        }
+
+        if (!createRes.ok) {
+          const json = await createRes.json();
+          setError(json.error ?? "Erro ao cadastrar instrutor.");
+          setSending(false);
+          return;
+        }
+
+        const created = await createRes.json();
+        instructorId = created.id;
+
+        // Atualizar lista local para manter consistência
+        setInstructors((prev) => [{ id: created.id, name: created.name, email: created.email }, ...prev]);
+      }
+
+      if (!instructorId) {
+        setError("Selecione ou cadastre um instrutor.");
+        setSending(false);
+        return;
+      }
+
       const res = await fetch("/api/submissoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ instructorId: selectedInstructorId, originalData: course }),
+        body: JSON.stringify({ instructorId, originalData: course }),
       });
 
       if (!res.ok) {
         const json = await res.json();
-        setError(json.error ?? "Erro ao criar tarefa.");
+        setError(json.error ?? "Erro ao criar submissão.");
         setSending(false);
         return;
       }
@@ -85,11 +135,12 @@ export default function UploadPage() {
     }
   }
 
+  const canSend =
+    mode === "existing" ? !!selectedInstructorId : !!newName.trim() && !!newEmail.trim();
+
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-8 px-6 py-16 max-w-lg mx-auto w-full">
-      <div className="w-full">
-        <StepBar steps={STEPS} current={step} />
-      </div>
+      <StepBar steps={STEPS} current={step} />
 
       {/* Step 1: Upload */}
       {step === 1 && (
@@ -122,7 +173,7 @@ export default function UploadPage() {
         </>
       )}
 
-      {/* Step 2: Selecionar instrutor */}
+      {/* Step 2: Selecionar ou cadastrar instrutor */}
       {step === 2 && course && (
         <>
           <div className="flex flex-col items-center gap-2 text-center">
@@ -138,30 +189,77 @@ export default function UploadPage() {
             </p>
           </div>
 
-          <div className="w-full flex flex-col gap-3">
-            <label className="text-alura-blue-light/70 text-sm">
-              Quem vai revisar este curso?
-            </label>
-            <select
-              value={selectedInstructorId}
-              onChange={(e) => setSelectedInstructorId(e.target.value)}
-              className="w-full bg-alura-blue-dark border border-alura-blue-light/20 rounded-xl px-4 py-3 text-alura-blue-light focus:outline-none focus:border-alura-cyan/50 transition-colors"
+          {/* Tabs: existente / novo */}
+          <div className="w-full flex rounded-xl overflow-hidden border border-alura-blue-light/20">
+            <button
+              onClick={() => { setMode("existing"); setError(null); }}
+              className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
+                mode === "existing"
+                  ? "bg-alura-cyan text-alura-blue-deep"
+                  : "text-alura-blue-light/50 hover:text-alura-blue-light"
+              }`}
             >
-              <option value="">Selecione um instrutor...</option>
-              {instructors.map((inst) => (
-                <option key={inst.id} value={inst.id}>
-                  {inst.name} — {inst.email}
-                </option>
-              ))}
-            </select>
+              Instrutor existente
+            </button>
+            <button
+              onClick={() => { setMode("new"); setError(null); }}
+              className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
+                mode === "new"
+                  ? "bg-alura-cyan text-alura-blue-deep"
+                  : "text-alura-blue-light/50 hover:text-alura-blue-light"
+              }`}
+            >
+              Novo instrutor
+            </button>
+          </div>
 
-            {instructors.length === 0 && (
-              <p className="text-alura-blue-light/40 text-xs">
-                Nenhum instrutor cadastrado ainda.{" "}
-                <a href="/instrutores" className="text-alura-cyan hover:underline">
-                  Gerenciar instrutores →
-                </a>
-              </p>
+          {/* Conteúdo do modo selecionado */}
+          <div className="w-full flex flex-col gap-3">
+            {mode === "existing" && (
+              <>
+                <label className="text-alura-blue-light/70 text-sm">
+                  Quem vai revisar este curso?
+                </label>
+                <select
+                  value={selectedInstructorId}
+                  onChange={(e) => setSelectedInstructorId(e.target.value)}
+                  className="w-full bg-alura-blue-dark border border-alura-blue-light/20 rounded-xl px-4 py-3 text-alura-blue-light focus:outline-none focus:border-alura-cyan/50 transition-colors"
+                >
+                  <option value="">Selecione um instrutor...</option>
+                  {instructors.map((inst) => (
+                    <option key={inst.id} value={inst.id}>
+                      {inst.name} — {inst.email}
+                    </option>
+                  ))}
+                </select>
+                {instructors.length === 0 && (
+                  <p className="text-alura-blue-light/40 text-xs">
+                    Nenhum instrutor cadastrado ainda. Use a aba &quot;Novo instrutor&quot; para cadastrar.
+                  </p>
+                )}
+              </>
+            )}
+
+            {mode === "new" && (
+              <>
+                <p className="text-alura-blue-light/50 text-xs">
+                  O instrutor será cadastrado automaticamente. Na primeira vez que entrar no app, ele definirá sua senha.
+                </p>
+                <input
+                  type="text"
+                  placeholder="Nome completo"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="w-full bg-alura-blue-dark border border-alura-blue-light/20 rounded-xl px-4 py-3 text-alura-blue-light placeholder-alura-blue-light/30 focus:outline-none focus:border-alura-cyan/50 transition-colors"
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  className="w-full bg-alura-blue-dark border border-alura-blue-light/20 rounded-xl px-4 py-3 text-alura-blue-light placeholder-alura-blue-light/30 focus:outline-none focus:border-alura-cyan/50 transition-colors"
+                />
+              </>
             )}
           </div>
 
@@ -180,10 +278,10 @@ export default function UploadPage() {
             </button>
             <button
               onClick={handleSend}
-              disabled={!selectedInstructorId || sending}
+              disabled={!canSend || sending}
               className="flex-1 bg-alura-cyan hover:bg-alura-cyan/80 disabled:opacity-50 text-alura-blue-deep font-bold px-8 py-3 rounded-xl transition-colors"
             >
-              {sending ? "Enviando..." : "Enviar tarefa"}
+              {sending ? "Enviando..." : "Enviar submissão"}
             </button>
           </div>
         </>
@@ -197,7 +295,7 @@ export default function UploadPage() {
               ✓
             </div>
             <h1 className="font-[family-name:var(--font-chakra-petch)] text-3xl font-bold text-alura-cyan">
-              Tarefa enviada!
+              Submissão enviada!
             </h1>
             <p className="text-alura-blue-light/70">
               O instrutor verá a tarefa ao entrar no app.
