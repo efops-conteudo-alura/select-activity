@@ -55,6 +55,9 @@ export default function PrimeiroAcessoPage() {
           <p className="text-alura-blue-light/60 text-sm">
             Primeiro acesso ao Seletor de Atividades
           </p>
+          <p className="text-alura-blue-light/40 text-xs mt-1">
+            Se você já tem conta em outro app de conteúdo, como o Hub Efops, use o mesmo email e senha.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -20,7 +20,7 @@ function statusLabel(status: string) {
 function statusClass(status: string) {
   if (status === "exported") return "bg-green-500/10 text-green-400";
   if (status === "reviewed") return "bg-yellow-500/10 text-yellow-400";
-  return "bg-alura-cyan/10 text-alura-cyan";
+  return "bg-yellow-500/10 text-yellow-400";
 }
 
 export default function TarefasPage() {

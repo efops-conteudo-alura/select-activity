@@ -186,7 +186,10 @@ export default function SubmissaoDetailPage({
       <header className="sticky top-0 z-10 bg-alura-blue-deep border-b border-alura-blue-light/10 px-6 py-4 flex items-center justify-between">
         <div>
           <p className="text-alura-blue-light/40 text-xs">
-            Enviado por {submission.instructor.name} · {new Date(submission.createdAt).toLocaleDateString("pt-BR")}
+            {submission.status === "pending"
+              ? `Aguardando revisão de ${submission.instructor.name}`
+              : `Revisado por ${submission.instructor.name}`}{" "}
+            · {new Date(submission.createdAt).toLocaleDateString("pt-BR")}
           </p>
           <h1 className="font-[family-name:var(--font-chakra-petch)] font-bold text-alura-cyan text-lg leading-tight">
             {submission.courseId}
