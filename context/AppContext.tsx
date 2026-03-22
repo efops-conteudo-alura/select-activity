@@ -33,11 +33,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (lesson: Lesson, exercise: Exercise) => {
       const isNowSelected = !exercise.isSelected;
 
-      // Fix Issue #5: não mutar o objeto direto — criar novo objeto
       const updatedExercise: Exercise = { ...exercise, isSelected: isNowSelected };
-
-      // Atualizar isSelected no objeto original para o checkbox refletir
-      exercise.isSelected = isNowSelected;
 
       setSelectedLessons((prev) => {
         const lessonIndex = prev.findIndex(
