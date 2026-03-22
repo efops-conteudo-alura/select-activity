@@ -243,7 +243,7 @@ export default function UploadPage() {
             {mode === "new" && (
               <>
                 <p className="text-alura-blue-light/50 text-xs">
-                  O instrutor será cadastrado automaticamente. Na primeira vez que entrar no app, ele definirá sua senha.
+                  O instrutor será cadastrado automaticamente. O login dele será feito apenas via e-mail.
                 </p>
                 <input
                   type="text"
