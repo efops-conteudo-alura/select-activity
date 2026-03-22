@@ -1,7 +1,3 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 # CLAUDE.md — Seletor de Atividades (select-activity)
 
 Ferramenta interna da Alura para coordenadores e instrutores selecionarem e revisarem atividades de cursos. Compartilha o banco de dados Neon com o hub-efops.
@@ -34,17 +30,16 @@ npx prisma generate  # regenera o client (NUNCA migrate ou db push aqui)
 
 ```
 app/
-  page.tsx                     → Redirect por role: INSTRUCTOR → /upload, COORDINATOR/ADMIN → /submissoes
+  page.tsx                     → Redirect por role: INSTRUCTOR → /tarefas, COORDINATOR/ADMIN → /submissoes
   layout.tsx                   → Root layout com <Providers> e <Header>
   login/page.tsx               → Login (público)
   criar-senha/page.tsx         → Definir senha para usuários sem senha (público)
   primeiro-acesso/page.tsx     → Cadastro de coordenadores via AllowedEmail (público)
-  upload/page.tsx              → Upload de arquivo JSON — INSTRUCTOR (protegido)
-  select/page.tsx              → Seleção de atividades — INSTRUCTOR (protegido)
-  review/page.tsx              → Revisão + edição de exercícios — INSTRUCTOR (protegido)
-  enviar/page.tsx              → Seleciona coordenador e envia submissão — INSTRUCTOR (protegido)
-  submissoes/page.tsx          → Lista de submissões recebidas — COORDINATOR/ADMIN (protegido)
-  submissoes/[id]/page.tsx     → Detalhe da submissão com diff + edição + export — COORDINATOR/ADMIN (protegido)
+  upload/page.tsx              → Upload JSON + seleção de instrutor — COORDINATOR/ADMIN (protegido)
+  tarefas/page.tsx             → Lista de tarefas recebidas — INSTRUCTOR (protegido)
+  tarefas/[id]/page.tsx        → Revisão da tarefa: seleção + edição + envio — INSTRUCTOR (protegido)
+  submissoes/page.tsx          → Lista de submissões criadas — COORDINATOR/ADMIN (protegido)
+  submissoes/[id]/page.tsx     → Detalhe da submissão: diff + edição + export — COORDINATOR/ADMIN (protegido)
   instrutores/page.tsx         → Gerenciamento de instrutores — COORDINATOR/ADMIN (protegido)
   api/
     auth/
@@ -53,14 +48,15 @@ app/
       set-password/route.ts    → Define senha para usuário sem senha
     instrutores/route.ts       → GET: lista instrutores | POST: cria instrutor (requer COORDINATOR ou ADMIN)
     coordenadores/route.ts     → GET: lista coordenadores/admins (qualquer usuário autenticado)
-    submissoes/route.ts        → GET: lista submissões do usuário | POST: cria submissão (INSTRUCTOR)
-    submissoes/[id]/route.ts   → GET: detalhe | PATCH: atualiza status/dados (COORDINATOR)
+    submissoes/route.ts        → GET: lista submissões do usuário | POST: cria submissão (COORDINATOR/ADMIN)
+    submissoes/[id]/route.ts   → GET: detalhe | PATCH: instrutor envia revisão ou coordenador exporta
 components/
   Providers.tsx                → SessionProvider + AppProvider (deve ter "use client")
   Header.tsx                   → Header com email e botão Sair (usa useSession)
   DropZone.tsx                 → Drag-drop para upload JSON
   LessonAccordion.tsx          → Accordion de aula com exercícios
   ExerciseCard.tsx             → Card de exercício com alternativas e comentário
+  StepBar.tsx                  → Barra de progresso de passos (centralizada via justify-center)
 context/
   AppContext.tsx               → Estado global: personType, course, selectedLessons
 lib/
@@ -74,6 +70,8 @@ types/
 prisma/
   schema.prisma                → Modelos read-only: User, AppRole, AllowedEmail
 proxy.ts                       → Middleware de autenticação (Next.js 16.2)
+public/
+  novidades.html               → Patch notes v1.x (abrir no browser e imprimir como PDF)
 ```
 
 ---
@@ -84,21 +82,42 @@ proxy.ts                       → Middleware de autenticação (Next.js 16.2)
 
 | Role | Fluxo |
 |---|---|
-| `INSTRUCTOR` | `/upload` → `/select` → `/review` (edição) → `/enviar` (escolhe coordenador + envia) |
-| `COORDINATOR` | `/submissoes` (lista) → `/submissoes/[id]` (diff + edição + export JSON) |
-| `ADMIN` | Mesmo que `COORDINATOR` |
+| `INSTRUCTOR` | `/tarefas` (lista) → `/tarefas/[id]` (seleciona + edita + envia ao coordenador) |
+| `COORDINATOR` | `/submissoes` (lista) → `/upload` (cria tarefa) → `/submissoes/[id]` (diff + edição + export) |
+| `ADMIN` | Mesmo que `COORDINATOR`, vê todas as submissões |
+
+### Fluxo completo coord → instrutor
+
+1. **Coordenador** acessa `/submissoes` → clica em "Nova submissão" → vai para `/upload`
+2. **Coordenador** faz upload do JSON → seleciona instrutor (existente ou novo) → envia
+   - Novo instrutor: cadastrado via `POST /api/instrutores` com nome + email, sem senha, sem acesso ao hub
+   - Submissão criada com `status: "pending"`, `submittedData: {}`
+3. **Instrutor** entra no app → vai para `/tarefas` → vê tarefa com status `pendente`
+4. **Instrutor** abre `/tarefas/[id]` → seleciona exercícios → edita → clica "Enviar"
+   - `PATCH /api/submissoes/[id]` com `submittedData` → status muda para `"reviewed"`
+5. **Coordenador** vê status `revisado` em `/submissoes` → abre `/submissoes/[id]`
+   - Vê diff das edições do instrutor, pode editar, restaurar ou remover exercícios
+   - Clica "Exportar JSON" → status muda para `"exported"`
+
+### Status da Submission
+
+| Status | Significado |
+|---|---|
+| `"pending"` | Coordenador criou, instrutor ainda não revisou |
+| `"reviewed"` | Instrutor enviou revisão, coordenador ainda não exportou |
+| `"exported"` | Coordenador exportou o JSON final |
 
 ### Fluxo de acesso por tipo de usuário
 
 **Coordenador (interno Alura — email na AllowedEmail):**
 1. Acessa `/primeiro-acesso` → preenche nome, email e senha
 2. O sistema verifica `AllowedEmail` e cria `User` + `AppRole("select-activity", "COORDINATOR")` + `AppRole("hub-efops", "USER")`
-3. Faz login normalmente
+3. Faz login normalmente (mesmo login do Hub Efops)
 
-**Instrutor (externo — criado por coordenador):**
-1. Coordenador chama `POST /api/instrutores` com nome e email
-2. Usuário criado sem senha + `AppRole("select-activity", "INSTRUCTOR")`
-3. Instrutor acessa `/criar-senha`, define sua senha e entra
+**Instrutor (externo — criado pelo coordenador):**
+1. Coordenador cria via `POST /api/instrutores` (ou inline no `/upload`)
+2. Usuário criado sem senha + `AppRole("select-activity", "INSTRUCTOR")` apenas — sem acesso ao hub
+3. Instrutor faz login **apenas com o email**, sem senha
 
 ### Rotas públicas (sem autenticação)
 - `/login`, `/criar-senha`, `/primeiro-acesso`
@@ -113,7 +132,7 @@ proxy.ts                       → Middleware de autenticação (Next.js 16.2)
 
 ## Banco de dados
 
-O schema contém os modelos usados pelo select-activity. A `AllowedEmail` é gerenciada pelo hub-efops — este app só lê. O model `Submission` precisa de migration no hub-efops antes de ser usado.
+O schema contém os modelos usados pelo select-activity. A `AllowedEmail` é gerenciada pelo hub-efops — este app só lê.
 
 ### Model Submission
 
@@ -125,9 +144,9 @@ model Submission {
   coordinatorId String
   coordinator   User      @relation("SubmissionCoordinator", fields: [coordinatorId], references: [id])
   courseId      String
-  originalData  Json      // JSON completo original (todos os exercícios, antes das edições)
-  submittedData Json      // JSON com exercícios selecionados + edições + comentários do instrutor
-  status        String    @default("pending") // "pending" | "exported"
+  originalData  Json      // JSON completo subido pelo coordenador (fonte do diff)
+  submittedData Json      // {} enquanto pending | { courseId, lessons } após o instrutor enviar
+  status        String    @default("pending") // "pending" | "reviewed" | "exported"
   exportedAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -171,6 +190,7 @@ A migração para next-auth v5 está registrada na issue #17 do hub-efops.
 - Importar Prisma sempre de `@/lib/db`: `import { prisma } from "@/lib/db"` (não `{ db }`)
 - Estado do curso persiste em `sessionStorage` — não sobrevive a refresh de tab
 - Todos os componentes de UI são feitos à mão (sem shadcn) — Tailwind puro
+- `StepBar` é auto-centrado via `justify-center` — não precisa de wrapper `w-full`
 
 ---
 
@@ -182,3 +202,5 @@ A migração para next-auth v5 está registrada na issue #17 do hub-efops.
 - **Nunca** tentar tipar `authOptions` com `NextAuthOptions` — usar `any`
 - Não usar `fetch()` dentro de Server Components para buscar dados internos — usar Prisma direto
 - Não expor dados sensíveis (senha, hash) nas respostas de API
+- Não comparar exercícios por `title` — sempre usar `exercise.id`
+- Não mutar objetos de estado diretamente — usar spread (`{ ...obj, campo: valor }`)
