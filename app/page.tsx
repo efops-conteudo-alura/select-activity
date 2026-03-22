@@ -35,7 +35,7 @@ export default function HomePage() {
     if (session.user.role === "COORDINATOR" || session.user.role === "ADMIN") {
       router.replace("/submissoes");
     } else {
-      router.replace("/upload");
+      router.replace("/tarefas");
     }
   }, [session, status, router, setPersonType]);
 

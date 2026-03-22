@@ -23,11 +23,13 @@ export async function GET(
 
   if (!submission) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
 
-  // Apenas o instrutor que enviou ou o coordenador destinatário podem ver
-  const userId = session.user.id;
-  if (submission.instructorId !== userId && submission.coordinatorId !== userId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const { id: userId, role } = session.user;
+  const canView =
+    role === "ADMIN" ||
+    submission.instructorId === userId ||
+    submission.coordinatorId === userId;
+
+  if (!canView) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   return NextResponse.json(submission);
 }
@@ -43,20 +45,33 @@ export async function PATCH(
   const submission = await prisma.submission.findUnique({ where: { id } });
   if (!submission) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
 
-  // Apenas o coordenador destinatário pode atualizar
-  if (submission.coordinatorId !== session.user.id) {
+  const { id: userId, role } = session.user;
+  const isCoordinator = role === "COORDINATOR" || role === "ADMIN";
+  const isAssignedInstructor = role === "INSTRUCTOR" && submission.instructorId === userId;
+
+  if (!isCoordinator && !isAssignedInstructor) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const body = await req.json();
   const data: Record<string, unknown> = {};
 
-  if (body.status === "exported") {
-    data.status = "exported";
-    data.exportedAt = new Date();
-  }
-  if (body.submittedData) {
+  if (isAssignedInstructor) {
+    // Instrutor envia revisão
+    if (!body.submittedData) {
+      return NextResponse.json({ error: "submittedData obrigatório." }, { status: 400 });
+    }
     data.submittedData = body.submittedData;
+    data.status = "reviewed";
+  } else {
+    // Coordenador/Admin edita ou exporta
+    if (body.status === "exported") {
+      data.status = "exported";
+      data.exportedAt = new Date();
+    }
+    if (body.submittedData) {
+      data.submittedData = body.submittedData;
+    }
   }
 
   const updated = await prisma.submission.update({ where: { id }, data });

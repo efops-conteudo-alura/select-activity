@@ -2,17 +2,32 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Submission {
   id: string;
   courseId: string;
   status: string;
   instructor: { name: string; email: string };
+  coordinator: { name: string; email: string };
   createdAt: string;
   exportedAt: string | null;
 }
 
+function statusLabel(status: string) {
+  if (status === "exported") return "exportado";
+  if (status === "reviewed") return "revisado";
+  return "pendente";
+}
+
+function statusClass(status: string) {
+  if (status === "exported") return "bg-green-500/10 text-green-400";
+  if (status === "reviewed") return "bg-yellow-500/10 text-yellow-400";
+  return "bg-red-500/10 text-red-400";
+}
+
 export default function SubmissoesPage() {
+  const router = useRouter();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,9 +43,17 @@ export default function SubmissoesPage() {
 
   return (
     <main className="flex flex-1 flex-col px-6 py-10 max-w-3xl mx-auto w-full gap-6">
-      <h1 className="font-[family-name:var(--font-chakra-petch)] text-2xl font-bold text-alura-cyan">
-        Submissões recebidas
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-[family-name:var(--font-chakra-petch)] text-2xl font-bold text-alura-cyan">
+          Submissões
+        </h1>
+        <button
+          onClick={() => router.push("/upload")}
+          className="bg-alura-cyan hover:bg-alura-cyan/80 text-alura-blue-deep font-bold px-5 py-2.5 rounded-xl transition-colors text-sm"
+        >
+          + Nova tarefa
+        </button>
+      </div>
 
       {loading && (
         <p className="text-alura-blue-light/40 text-sm">Carregando...</p>
@@ -38,7 +61,7 @@ export default function SubmissoesPage() {
 
       {!loading && submissions.length === 0 && (
         <p className="text-alura-blue-light/40 text-sm">
-          Nenhuma submissão recebida ainda.
+          Nenhuma tarefa criada ainda.
         </p>
       )}
 
@@ -59,13 +82,9 @@ export default function SubmissoesPage() {
                 </p>
               </div>
               <span
-                className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                  s.status === "exported"
-                    ? "bg-green-500/10 text-green-400"
-                    : "bg-alura-cyan/10 text-alura-cyan"
-                }`}
+                className={`text-xs font-semibold px-2 py-1 rounded-full ${statusClass(s.status)}`}
               >
-                {s.status === "exported" ? "exportado" : "pendente"}
+                {statusLabel(s.status)}
               </span>
             </Link>
           ))}

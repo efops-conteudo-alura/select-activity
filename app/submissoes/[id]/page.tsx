@@ -38,7 +38,9 @@ export default function SubmissaoDetailPage({
       .then((r) => r.json())
       .then((data) => {
         setSubmission(data);
-        setEditedLessons(data.submittedData?.lessons ?? []);
+        // submittedData pode ser {} quando o instrutor ainda não enviou
+        const lessons = Array.isArray(data.submittedData?.lessons) ? data.submittedData.lessons : [];
+        setEditedLessons(lessons);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -192,6 +194,12 @@ export default function SubmissaoDetailPage({
           {submission.status === "exported" && (
             <span className="text-xs text-green-400">exportado</span>
           )}
+          {submission.status === "reviewed" && (
+            <span className="text-xs text-yellow-400">revisado — pronto para exportar</span>
+          )}
+          {submission.status === "pending" && (
+            <span className="text-xs text-red-400">aguardando revisão do instrutor</span>
+          )}
         </div>
         <button
           onClick={() => router.push("/submissoes")}
@@ -202,6 +210,15 @@ export default function SubmissaoDetailPage({
       </header>
 
       <main className="flex flex-col gap-6 px-6 py-6 max-w-3xl mx-auto w-full flex-1">
+        {/* Aviso de pendente */}
+        {submission.status === "pending" && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
+            <p className="text-red-400 text-sm">
+              O instrutor ainda não enviou a revisão. Esta página será atualizada quando ele concluir.
+            </p>
+          </div>
+        )}
+
         {/* Legenda */}
         <div className="flex flex-wrap gap-4 text-xs text-alura-blue-light/40 bg-alura-blue-dark/40 rounded-xl px-4 py-3">
           <span className="flex items-center gap-1.5">

@@ -43,37 +43,37 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions) as AppSession | null;
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (session.user.role !== "INSTRUCTOR") {
-    return NextResponse.json({ error: "Apenas instrutores podem enviar submissões." }, { status: 403 });
+  if (session.user.role !== "COORDINATOR" && session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Apenas coordenadores podem criar tarefas." }, { status: 403 });
   }
 
-  const { coordinatorId, originalData, submittedData } = await req.json();
+  const { instructorId, originalData } = await req.json();
 
-  if (!coordinatorId || !originalData || !submittedData) {
+  if (!instructorId || !originalData) {
     return NextResponse.json({ error: "Dados incompletos." }, { status: 400 });
   }
 
   const courseId = (originalData as { courseId?: string }).courseId ?? "";
 
-  // Verificar que o coordenador existe e tem role no app
-  const coordRole = await prisma.appRole.findFirst({
+  // Verificar que o instrutor existe e tem role no app
+  const instructorRole = await prisma.appRole.findFirst({
     where: {
-      userId: coordinatorId,
+      userId: instructorId,
       app: "select-activity",
-      role: { in: ["COORDINATOR", "ADMIN"] },
+      role: "INSTRUCTOR",
     },
   });
-  if (!coordRole) {
-    return NextResponse.json({ error: "Coordenador não encontrado." }, { status: 404 });
+  if (!instructorRole) {
+    return NextResponse.json({ error: "Instrutor não encontrado." }, { status: 404 });
   }
 
   const submission = await prisma.submission.create({
     data: {
-      instructorId: session.user.id,
-      coordinatorId,
+      instructorId,
+      coordinatorId: session.user.id,
       courseId,
       originalData,
-      submittedData,
+      submittedData: {},
       status: "pending",
     },
   });
