@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Novidades — Seletor de Atividades</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #fff;
+      color: #1a1a2e;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 48px 40px;
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    /* Cabeçalho */
+    .header {
+      border-bottom: 3px solid #00c8f0;
+      padding-bottom: 24px;
+      margin-bottom: 36px;
+    }
+    .header .tag {
+      display: inline-block;
+      background: #e8fafd;
+      color: #007a95;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #00c8f0;
+      line-height: 1.2;
+    }
+    .header p {
+      margin-top: 8px;
+      color: #555;
+      font-size: 14px;
+    }
+
+    /* Seções */
+    h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #00c8f0;
+      margin-top: 36px;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e0f7fb;
+    }
+
+    p { margin-bottom: 10px; color: #333; }
+
+    /* Fluxo passo a passo */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 16px 0;
+    }
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .flow-step:last-child { border-bottom: none; }
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #00c8f0;
+      color: #fff;
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+    .step-content strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 3px;
+    }
+    .step-content span {
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* Role badges */
+    .role {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .role-coord { background: #e8f4fd; color: #0077aa; }
+    .role-inst  { background: #f0fdf4; color: #16803c; }
+
+    /* Destaques */
+    .highlight-box {
+      background: #f8fdfe;
+      border-left: 4px solid #00c8f0;
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 12px 0;
+      font-size: 14px;
+      color: #333;
+    }
+    .highlight-box strong { color: #007a95; }
+
+    /* Status badges */
+    .status {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 20px;
+      margin: 0 3px;
+    }
+    .status-pending  { background: #fefce8; color: #a16207; }
+    .status-reviewed { background: #fefce8; color: #a16207; }
+    .status-exported { background: #f0fdf4; color: #16803c; }
+
+    /* Lista simples */
+    ul {
+      padding-left: 20px;
+      margin: 8px 0 12px;
+      color: #333;
+    }
+    ul li { margin-bottom: 6px; font-size: 14px; }
+
+    /* Rodapé */
+    .footer {
+      margin-top: 48px;
+      padding-top: 16px;
+      border-top: 1px solid #e0e0e0;
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+    }
+
+    @media print {
+      body { padding: 32px 28px; }
+      h2 { page-break-after: avoid; }
+      .flow-step { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="tag">Novidades · Março 2026</div>
+    <h1>Seletor de Atividades — O que mudou</h1>
+    <p>Este documento explica as principais mudanças desde a migração para o novo sistema web.</p>
+  </div>
+
+  <!-- ── O QUE É ── -->
+  <h2>O que é o Seletor de Atividades</h2>
+  <p>
+    O Seletor de Atividades é a ferramenta interna da Alura onde coordenadores e instrutores
+    colaboram na revisão das atividades de um curso antes de elas irem para a plataforma.
+    O sistema vive em <strong>select.alura.com.br</strong> e usa o mesmo login do Hub Efops.
+  </p>
+
+  <!-- ── FLUXO NOVO ── -->
+  <h2>O novo fluxo — passo a passo</h2>
+
+  <p>
+    A principal mudança é <strong>quem começa o processo</strong>: antes era o instrutor quem
+    recebia o JSON por e-mail e fazia o upload. Agora é o <strong>coordenador</strong>
+    que inicia, e o instrutor recebe a tarefa direto no app.
+  </p>
+
+  <div class="flow">
+
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <strong><span class="role role-coord">Coordenador</span> Faz upload do arquivo JSON</strong>
+        <span>
+          Na página <em>Submissões</em>, clique em <strong>+ Nova submissão</strong>
+          e faça o upload do arquivo JSON com as atividades do curso.
+        </span>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <strong><span class="role role-coord">Coordenador</span> Seleciona o instrutor responsável</strong>
+        <span>
+          Após o upload, escolha o instrutor que vai revisar o curso.
+          Caso seja um instrutor novo, preencha o nome e e-mail — ele será
+          cadastrado automaticamente, sem precisar de convite ou configuração extra.
+          O login dele é feito apenas via e-mail.
+        </span>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <strong><span class="role role-inst">Instrutor</span> Vê a tarefa no app</strong>
+        <span>
+          Ao entrar no Seletor, o instrutor vê a lista de tarefas atribuídas a ele,
+          com o nome do coordenador responsável e o status de cada uma.
+        </span>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <strong><span class="role role-inst">Instrutor</span> Seleciona e edita as atividades</strong>
+        <span>
+          O instrutor abre a tarefa e passa por dois passos:
+          <br />
+          <strong>Seleção</strong> — marca ao menos uma atividade por aula.
+          <br />
+          <strong>Edição</strong> — pode ajustar o enunciado, as alternativas, o gabarito
+          e adicionar comentários para o coordenador.
+        </span>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <strong><span class="role role-inst">Instrutor</span> Envia a revisão</strong>
+        <span>
+          Clica em <strong>Enviar para [nome do coordenador]</strong>.
+          A tarefa muda para o status <span class="status status-reviewed">revisado</span>.
+        </span>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <strong><span class="role role-coord">Coordenador</span> Revisa e exporta</strong>
+        <span>
+          Em <em>Submissões</em>, a tarefa aparece como
+          <span class="status status-reviewed">revisado</span>.
+          O coordenador abre, vê o <strong>diff</strong> das edições do instrutor
+          (texto riscado = como estava antes), pode fazer ajustes finais e clica em
+          <strong>Exportar JSON</strong>. Status muda para
+          <span class="status status-exported">exportado</span>.
+        </span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── STATUS ── -->
+  <h2>Status das submissões</h2>
+
+  <div class="highlight-box">
+    <strong>Pendente</strong> — O coordenador criou a tarefa, mas o instrutor ainda não enviou a revisão.
+  </div>
+  <div class="highlight-box">
+    <strong>Revisado</strong> — O instrutor já enviou. Aguardando o coordenador exportar.
+  </div>
+  <div class="highlight-box">
+    <strong>Exportado</strong> — O coordenador exportou o JSON final. Processo concluído.
+  </div>
+
+  <!-- ── LOGIN ── -->
+  <h2>Login e acesso</h2>
+
+  <ul>
+    <li>
+      <strong>Coordenadores</strong> — O cadastro é feito uma única vez em
+      <em>Seletor → Criar conta</em>. Se você já tem conta no Hub Efops,
+      use o mesmo e-mail e senha.
+    </li>
+    <li>
+      <strong>Instrutores</strong> — Não precisam criar conta.
+      O coordenador os cadastra na hora de criar uma submissão.
+      O acesso é feito apenas com o e-mail, sem senha.
+    </li>
+  </ul>
+
+  <!-- ── DIFF ── -->
+  <h2>Como funciona o diff (comparação de edições)</h2>
+  <p>
+    Quando o coordenador abre uma submissão revisada, vê claramente o que o instrutor alterou:
+  </p>
+  <ul>
+    <li><strong>Texto riscado em vermelho</strong> — era assim antes da edição do instrutor.</li>
+    <li><strong>Texto atual</strong> — como o instrutor deixou.</li>
+    <li>Alternativa correta alterada aparece marcada em amarelo.</li>
+  </ul>
+  <p>
+    O coordenador ainda pode editar qualquer campo, remover exercícios selecionados
+    ou restaurar exercícios que o instrutor não selecionou — tudo antes de exportar.
+  </p>
+
+  <div class="footer">
+    Seletor de Atividades — Alura · Março 2026
+  </div>
+
+</body>
+</html>
