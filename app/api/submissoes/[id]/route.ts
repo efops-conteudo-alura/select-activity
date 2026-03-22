@@ -46,7 +46,9 @@ export async function PATCH(
   if (!submission) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
 
   const { id: userId, role } = session.user;
-  const isCoordinator = role === "COORDINATOR" || role === "ADMIN";
+  const isCoordinator =
+    (role === "COORDINATOR" && submission.coordinatorId === userId) ||
+    role === "ADMIN";
   const isAssignedInstructor = role === "INSTRUCTOR" && submission.instructorId === userId;
 
   if (!isCoordinator && !isAssignedInstructor) {
