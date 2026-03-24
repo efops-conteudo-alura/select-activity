@@ -122,15 +122,21 @@ export default function UploadPage() {
       });
 
       if (!res.ok) {
-        const json = await res.json();
-        setError(json.error ?? "Erro ao criar submissão.");
+        let errorMsg = "Erro ao criar submissão.";
+        try {
+          const json = await res.json();
+          errorMsg = json.error ?? errorMsg;
+        } catch {
+          errorMsg = `Erro no servidor (${res.status}). Tente novamente.`;
+        }
+        setError(errorMsg);
         setSending(false);
         return;
       }
 
       setStep(3);
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError("Erro de conexão. Verifique sua internet e tente novamente.");
       setSending(false);
     }
   }

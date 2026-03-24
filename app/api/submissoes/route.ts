@@ -53,30 +53,43 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Dados incompletos." }, { status: 400 });
   }
 
-  const courseId = (originalData as { courseId?: string }).courseId ?? "";
+  const courseId = String((originalData as { courseId?: unknown }).courseId ?? "");
 
   // Verificar que o instrutor existe e tem role no app
-  const instructorRole = await prisma.appRole.findFirst({
-    where: {
-      userId: instructorId,
-      app: "select-activity",
-      role: "INSTRUCTOR",
-    },
-  });
+  let instructorRole;
+  try {
+    instructorRole = await prisma.appRole.findFirst({
+      where: {
+        userId: instructorId,
+        app: "select-activity",
+        role: "INSTRUCTOR",
+      },
+    });
+  } catch (e) {
+    console.error("[POST /api/submissoes] Erro ao buscar instrutor:", e);
+    return NextResponse.json({ error: "Erro ao acessar o banco de dados." }, { status: 500 });
+  }
+
   if (!instructorRole) {
     return NextResponse.json({ error: "Instrutor não encontrado." }, { status: 404 });
   }
 
-  const submission = await prisma.submission.create({
-    data: {
-      instructorId,
-      coordinatorId: session.user.id,
-      courseId,
-      originalData,
-      submittedData: {},
-      status: "pending",
-    },
-  });
+  let submission;
+  try {
+    submission = await prisma.submission.create({
+      data: {
+        instructorId,
+        coordinatorId: session.user.id,
+        courseId,
+        originalData,
+        submittedData: {},
+        status: "pending",
+      },
+    });
+  } catch (e) {
+    console.error("[POST /api/submissoes] Erro ao criar submissão:", e);
+    return NextResponse.json({ error: "Erro ao salvar submissão no banco de dados." }, { status: 500 });
+  }
 
   return NextResponse.json({ id: submission.id }, { status: 201 });
 }
