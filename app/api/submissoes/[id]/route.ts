@@ -79,3 +79,27 @@ export async function PATCH(
   const updated = await prisma.submission.update({ where: { id }, data });
   return NextResponse.json({ id: updated.id, status: updated.status });
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions) as AppSession | null;
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id: userId, role } = session.user;
+  if (role !== "COORDINATOR" && role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const submission = await prisma.submission.findUnique({ where: { id } });
+  if (!submission) return NextResponse.json({ error: "Não encontrado." }, { status: 404 });
+
+  if (role === "COORDINATOR" && submission.coordinatorId !== userId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  await prisma.submission.delete({ where: { id } });
+  return NextResponse.json({ ok: true });
+}
