@@ -177,6 +177,20 @@ export default function TarefaDetailPage({
 
   const totalSelected = selectedLessons.reduce((acc, l) => acc + l.exercises.length, 0);
 
+  // Deriva isSelected de selectedLessons para exibição correta no step 1
+  const annotatedLessons = course.lessons.map((lesson) => {
+    const selectedLesson = selectedLessons.find(
+      (sl) => sl.lessonNumber === lesson.lessonNumber
+    );
+    return {
+      ...lesson,
+      exercises: lesson.exercises.map((ex) => ({
+        ...ex,
+        isSelected: selectedLesson?.exercises.some((se) => se.id === ex.id) ?? false,
+      })),
+    };
+  });
+
   return (
     <div className="flex flex-col flex-1">
       <header className="sticky top-0 z-10 bg-alura-blue-deep border-b border-alura-blue-light/10 px-6 py-4 flex flex-col gap-3">
@@ -209,7 +223,7 @@ export default function TarefaDetailPage({
               Selecione ao menos uma atividade por aula.{" "}
               <span className="text-alura-blue-light/40">Você poderá editá-las no próximo passo.</span>
             </p>
-            {course.lessons.map((lesson) => (
+            {annotatedLessons.map((lesson) => (
               <LessonAccordion
                 key={lesson.lessonNumber}
                 lesson={lesson}
