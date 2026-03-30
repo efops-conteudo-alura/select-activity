@@ -32,6 +32,19 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-[family-name:var(--font-inter)]">
         <Providers>
+          <div className="bg-yellow-400 text-yellow-900 text-sm text-center px-4 py-2 font-semibold">
+            ⚠️ Este app será descontinuado em breve e não receberá novas atualizações.
+            Para usar a versão mais recente do Seletor de Atividades, acesse o{" "}
+            <a
+              href="https://hub-producao-conteudo.vercel.app/home"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-bold hover:text-yellow-950"
+            >
+              Hub de Produção de Conteúdo
+            </a>
+            {" "}e conecte-se com a mesma conta (você não perderá nenhuma atividade salva).
+          </div>
           <Header />
           {children}
         </Providers>
